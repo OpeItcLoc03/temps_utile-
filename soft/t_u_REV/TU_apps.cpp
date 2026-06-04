@@ -33,7 +33,10 @@
 #include "util/util_macros.h"
 
 static constexpr TU::App available_apps[] = {
-  INSTANTIATE_APP("CL", 0x0102, "6xclocks", CLOCKS),
+  // storage_version 0x0103: T4.0 port removed the DAC mode + CV/pitch sequencer
+  // settings from Clock_channel, shifting the values_[]/descriptor layout. The
+  // bump invalidates old app slots (CheckSlot version mismatch -> defaults).
+  INSTANTIATE_APP("CL", 0x0103, "6xclocks", CLOCKS),
 };
 
 static constexpr int NUM_AVAILABLE_APPS = ARRAY_SIZE(available_apps);

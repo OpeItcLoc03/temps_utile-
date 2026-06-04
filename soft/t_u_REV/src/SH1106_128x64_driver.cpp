@@ -29,7 +29,14 @@
 #include "SH1106_128x64_driver.h"
 #include "../TU_gpio.h"
 
+// K20 drives the panel over SPI0 + a DMA page transfer. On T4.0 the panel's SCK
+// pad is wired to physical pin 14, which LPSPI4 cannot drive (SCK is only on
+// pin 13 or 27), so the T4.0 path bit-bangs the bus (see SPI_send below). The
+// display is write-only and low-bandwidth, so a software shift-out at 600 MHz is
+// fast enough and DMA is not needed. See t4-port-plan.md "Scope — rewrite".
+#if defined(__MK20DX256__)
 #define DMA_PAGE_TRANSFER
+#endif
 #ifdef DMA_PAGE_TRANSFER
 #include <DMAChannel.h>
 static DMAChannel page_dma;
@@ -189,7 +196,32 @@ void SH1106_128x64_Driver::SendPage(uint_fast8_t index, const uint8_t *data) {
 }
 
 void SH1106_128x64_Driver::SPI_send(void *bufr, size_t n) {
-
+#if defined(__IMXRT1062__)
+  // T4.0: bit-banged SPI on MOSI=pin 11 / SCK=pin 14 (the panel's SCK pad; LPSPI4
+  // can't reach pin 14). SPI_MODE0, MSB-first: set MOSI, then pulse SCK low->high
+  // (the panel latches on the rising edge) ->low.
+  //
+  // digitalWriteFast compiles to single register writes, so at 600 MHz an
+  // un-throttled loop toggles SCK at ~50-100 MHz — far above the SH1106's ~10 MHz
+  // SPI ceiling, so the panel drops bits and the image breaks up into flickering
+  // stripes. Hold each edge with delayNanoseconds() to keep SCK near ~6 MHz; this
+  // also guarantees MOSI setup time before the latching rising edge. A full frame
+  // (~1 KB) still flushes in ~1.3 ms, so the UI stays smooth.
+  const uint8_t *buf = (const uint8_t *)bufr;
+  while (n--) {
+    uint8_t b = *buf++;
+    for (uint8_t bit = 0; bit < 8; ++bit) {
+      digitalWriteFast(OLED_MOSI, (b & 0x80) ? HIGH : LOW);
+      b <<= 1;
+      delayNanoseconds(50);             // MOSI setup before rising edge
+      digitalWriteFast(OLED_SCK, HIGH);
+      delayNanoseconds(50);             // min SCK high — panel latches here
+      digitalWriteFast(OLED_SCK, LOW);
+      delayNanoseconds(50);             // min SCK low
+    }
+  }
+  return;
+#else
   // adapted from https://github.com/xxxajk/spi4teensy3
   int i;
   int nf;
@@ -229,6 +261,7 @@ void SH1106_128x64_Driver::SPI_send(void *bufr, size_t n) {
           SPI0_POPR;
           nf--;
   }
+#endif // __IMXRT1062__
 }
 
 /*static*/

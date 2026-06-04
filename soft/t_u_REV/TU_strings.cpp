@@ -5,11 +5,12 @@ namespace TU {
 
   namespace Strings {
 
-  const char * const seq_playmodes[] = {" - ", "SEQ+1", "SEQ+2", "SEQ+3", "TR2+1", "TR2+2", "TR2+3", "SH-1", "SH-2", "SH-3", "SH-4"};  
+  const char * const seq_playmodes[] = {" - ", "SEQ+1", "SEQ+2", "SEQ+3", "TR2+1", "TR2+2", "TR2+3", "SH-1", "SH-2", "SH-3", "SH-4"};
 
-  const char * const cv_seq_playmodes[] = {"fwd", "rev", "pnd1", "pdn2", "rnd", "ARP"};  
-    
-  const char * const seq_id[] = { "--> #1", "--> #2", "--> #3", "--> #4", "#1", "#2", "#3", "#4"};
+  // (T4.0 port: cv_seq_playmodes / dac_modes / binary_tracking removed — DAC mode
+  // + CV/pitch sequencer gone.)
+
+  const char * const seq_id[] ={ "--> #1", "--> #2", "--> #3", "--> #4", "#1", "#2", "#3", "#4"};
 
   const char * const trigger_input_names[] = { "TR1", "TR2", "TR3", "TR4" };
 
@@ -21,13 +22,9 @@ namespace TU {
   
   const char * const channel_id[] = { "ch#1", "ch#2", "ch#3", "ch#4", "ch#5", "ch#6"};
 
-  const char * const mode[] = { "MULT", "LFSR", "RAND", "EUCL", "LOGIC", "SEQ", "BURST", "DAC" };
+  const char * const mode[] = { "MULT", "LFSR", "RAND", "EUCL", "LOGIC", "SEQ", "BURST" };
 
-  const char * const dac_modes[] = { "BIN", "RAND", "T_M", "LGTC", "SEQ"};
-  
   const char * const logic_tracking[] = { "state", "P_W"};
-
-  const char * const binary_tracking[] = { "P_W", "state"};
 
   const char * const encoder_config_strings[] = { "normal", "R reversed", "L reversed", "LR reversed" };
 

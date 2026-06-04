@@ -95,7 +95,7 @@ void scope_render() {
 
   for (weegfx::coord_t x = 0; x < (weegfx::coord_t)kScopeDepth - 1; ++x) {
     size_t index = (x + averaged_scope_tail + 1) % kScopeDepth;
-    graphics.setPixel(x, 0 + averaged_scope_history[_DAC_CHANNEL][index]);
+    graphics.setPixel(x, 0 + averaged_scope_history[CLOCK_CHANNEL_4][index]);
   }
 }
 
@@ -104,7 +104,7 @@ void vectorscope_render() {
 
   for (weegfx::coord_t x = 0; x < (weegfx::coord_t)kScopeDepth - 1; ++x) {
     size_t index = (x + averaged_scope_tail + 1) % kScopeDepth;
-    graphics.setPixel(averaged_scope_history[_DAC_CHANNEL][index], averaged_scope_history[_DAC_CHANNEL][index]);
+    graphics.setPixel(averaged_scope_history[CLOCK_CHANNEL_4][index], averaged_scope_history[CLOCK_CHANNEL_4][index]);
   }
 }
 

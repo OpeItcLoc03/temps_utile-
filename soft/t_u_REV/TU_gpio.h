@@ -26,7 +26,18 @@
   #define CLK1 5
   #define CLK2 6
   #define CLK3 7
+#if defined(__IMXRT1062__)
+  // T4.0 has no A14/DAC pad: ch4 is a plain GPIO gate (see t4-port-plan.md
+  // "Channel 4 output pin"). Hardware assembled: the ch4 pogo pad rings out to
+  // physical pin 26 (not 24 as first planned) — confirmed by continuity check.
+  #define CLK4 26
+#else
   #define CLK4 A14 // DAC channel; alt = 29
+  // Jakplugg module revision: ch4 gate is mirrored as a plain digital gate on
+  // pin 29, in parallel with the A14 DAC. An on-board switch selects which
+  // physical output reaches the jack. Driven by set_Output4() (TU_outputs.cpp).
+  #define CLK4_GATE 29
+#endif
   #define CLK5 8
   #define CLK6 2
   
@@ -49,6 +60,14 @@
 #define OLED_CS_ACTIVE LOW
 #define OLED_CS_INACTIVE HIGH
 
+#if defined(__IMXRT1062__)
+// T4.0: the OLED is bit-banged (the panel's SCK pad is wired to physical pin 14,
+// which Teensy 4.0 LPSPI4 cannot drive — SCK is only available on pin 13 or 27).
+// MOSI/SCK match the K20 routing: DIN=pin 11, SCK=pin 14.
+#define OLED_MOSI 11
+#define OLED_SCK  14
+#endif
+
 #define encR1 15
 #define encR2 16
 #define butR  13
@@ -58,7 +77,8 @@
 #define butL  23
 
 #define TU_GPIO_DEBUG_PIN1 30
-#define TU_GPIO_DEBUG_PIN2 29 // available on PCB
+// pin 29 was the spare debug pin (DEBUG_PIN2); it is now CLK4_GATE on the
+// Jakplugg revision (see CLK4_GATE above), so only one debug pin remains.
 
 #define TU_GPIO_BUTTON_PINMODE INPUT_PULLUP
 #define TU_GPIO_TRx_PINMODE INPUT_PULLUP

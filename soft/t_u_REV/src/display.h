@@ -52,6 +52,23 @@ static inline void Update() {
   }
 }
 
+#if defined(__IMXRT1062__)
+// T4.0 has no display DMA: SendPage() blocks (bit-banged SPI, ~150us/page). The
+// K20 build hides that latency by paging the transfer through the 60us CORE ISR
+// via Flush()/Update(); doing the same with a blocking bit-bang overruns the ISR
+// and hangs the system. So on T4 the panel is flushed synchronously here, from
+// whatever context just finished drawing the frame (see GRAPHICS_END_FRAME), and
+// the ISR does not touch the display at all.
+static inline void Render() {
+  if (!frame_buffer.readable())
+    return;
+  driver.Begin(frame_buffer.readable_frame());
+  while (!driver.Flush())
+    driver.Update();
+  frame_buffer.read();
+}
+#endif
+
 };
 
 extern weegfx::Graphics graphics;
@@ -68,9 +85,17 @@ do { \
     graphics.Begin(frame, true); \
     do {} while(0)
 
+#if defined(__IMXRT1062__)
+// T4.0: push the just-finished frame to the panel synchronously (no ISR/DMA).
+#define DISPLAY_RENDER_FRAME() display::Render()
+#else
+#define DISPLAY_RENDER_FRAME() do {} while (0)
+#endif
+
 #define GRAPHICS_END_FRAME() \
     graphics.End(); \
     display::frame_buffer.written(); \
+    DISPLAY_RENDER_FRAME(); \
   } \
 } while (0)
 

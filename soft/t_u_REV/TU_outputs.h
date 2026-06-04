@@ -15,8 +15,6 @@ extern void set_Output4(uint16_t data);
 extern void set_Output5(uint8_t data);
 extern void set_Output6(uint8_t data);
 
-extern const int8_t _DAC_CHANNEL;
-
 enum CLOCK_CHANNEL {
   CLOCK_CHANNEL_1,
   CLOCK_CHANNEL_2,
@@ -28,31 +26,21 @@ enum CLOCK_CHANNEL {
 };
 
 const uint8_t NUM_CHANNELS = 6;
-const uint8_t NUM_DACS = 1;
 
 namespace TU {
 
 class OUTPUTS {
 public:
   static constexpr size_t kHistoryDepth = 8;
-  static constexpr uint16_t MAX_VALUE = 4095;  // DAC fullscale 
-  static constexpr int CALIBRATION_POINTS = 5; // -4v, -2v, 0v, 2v, 4v
-  static constexpr int16_t PITCH_LIMIT = 4000;
-  #ifdef MOD_OFFSET
-    static constexpr int kOctaveZero = 1;
-  #else
-    #ifdef MODEL_2TT
-    static constexpr int kOctaveZero = 0;
-    #else
-    static constexpr int kOctaveZero = 2;
-    #endif
-  #endif
+  static constexpr uint16_t MAX_VALUE = 4095;  // output fullscale
 
+  // (T4.0 port: DAC calibration LUT removed — IMXRT1062 has no DAC, ch4 is a
+  // plain gate. The empty struct keeps the EEPROM CalibrationData wrapper +
+  // OUTPUTS::Init plumbing intact; the calib FOURCC bump discards old layouts.)
   struct CalibrationData {
-    uint16_t calibration_points[NUM_DACS][CALIBRATION_POINTS];
   };
 
-  static void Init(CalibrationData *calibration_data);
+  static void Init();
   static void SPI_Init();
   
   static void zero_all() {
@@ -86,26 +74,9 @@ public:
     return states_[index];
   }
 
-  static uint32_t get_zero_offset(int channel) {
-    
-    if (channel == _DAC_CHANNEL) 
-      return calibration_data_->calibration_points[0x0][kOctaveZero]; 
-    else 
-      return 0x0;
-  }
-
-  static void set_v_oct() {
-
-    // average calibration points:
-    float temp_octave = 0;
-    for (int i = 0; i < CALIBRATION_POINTS - 1; i++) 
-      temp_octave += ((float)((calibration_data_->calibration_points[0x0][i+1] - calibration_data_->calibration_points[0x0][i])) / 2.0f);
-    //
-    calibrated_v_oct_ = ((uint16_t)(0.5f + temp_octave/(CALIBRATION_POINTS-1)));
-  }
-
-  static uint16_t get_v_oct() {
-    return calibrated_v_oct_;
+  static uint32_t get_zero_offset(int /*channel*/) {
+    // T4.0 port: ch4 is a plain gate, no DAC zero-offset. All channels read 0.
+    return 0x0;
   }
 
   static void Update() {
@@ -138,12 +109,10 @@ public:
   }
 
 private:
-  static CalibrationData *calibration_data_;
   static uint32_t values_[CLOCK_CHANNEL_LAST];
   static uint32_t states_[CLOCK_CHANNEL_LAST];
   static uint16_t history_[NUM_CHANNELS][kHistoryDepth];
   static volatile size_t history_tail_;
-  static uint16_t calibrated_v_oct_;
 };
 
 }; // namespace TU

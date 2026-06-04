@@ -1,7 +1,9 @@
 #ifndef TU_ADC_H_
 #define TU_ADC_H_
 
-#include "src/ADC/OC_util_ADC.h"
+#if defined(__MK20DX256__)
+#include "src/ADC/OC_util_ADC.h"  // vendored pedvide K20 fork — #errors on non-K20
+#endif
 #include "TU_config.h"
 
 #include <stdint.h>
@@ -34,8 +36,14 @@ public:
   // 16 bit has best-case 13 bits useable, but we only want 12 so we discard 4 anyway
   static constexpr uint8_t kAdcScanResolution = 16;
   static constexpr uint8_t kAdcScanAverages = 4;
+#if defined(__MK20DX256__)
   static constexpr uint8_t kAdcSamplingSpeed = ADC_HIGH_SPEED_16BITS;
   static constexpr uint8_t kAdcConversionSpeed = ADC_HIGH_SPEED;
+#else
+  // T4.0 skeleton: vendored ADC enums absent; real IMXRT ADC is step 3.
+  static constexpr uint8_t kAdcSamplingSpeed = 0;
+  static constexpr uint8_t kAdcConversionSpeed = 0;
+#endif
   static constexpr uint32_t kAdcValueShift = kAdcSmoothBits;
 
 
@@ -89,7 +97,9 @@ private:
     smoothed_[channel] = value;
   }
 
+#if defined(__MK20DX256__)
   static ::ADC adc_;
+#endif
   static volatile bool ready_;
   static size_t scan_channel_;
   static CalibrationData *calibration_data_;

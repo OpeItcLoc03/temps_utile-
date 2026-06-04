@@ -1,7 +1,12 @@
 #ifndef TU_CONFIG_H_
 #define TU_CONFIG_H_
 
-#if F_CPU != 120000000
+#include <stdint.h>
+#include <stddef.h>
+
+// K20/T3.2 is locked to 120MHz (timing-critical ISR rates below). The T4.0
+// port runs a different clock tree (600/300MHz) and recomputes its own rates.
+#if defined(__MK20DX256__) && F_CPU != 120000000
  #error "Please compile T&U firmware with CPU speed 120MHz"
 #endif
 

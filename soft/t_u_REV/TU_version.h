@@ -4,8 +4,8 @@
 // GENERATED FILE, DO NOT EDIT
 //
 #ifdef MODEL_2TT
-#define TU_VERSION "2TT_v1.3"
+#define TU_VERSION "2TT_v1.4"
 #else
-#define TU_VERSION "TU_v1.3"
+#define TU_VERSION "TU_v1.4"
 #endif
 #endif

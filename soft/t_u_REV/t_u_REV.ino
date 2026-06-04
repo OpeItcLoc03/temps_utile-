@@ -38,7 +38,9 @@
 #include "TU_version.h"
 #include "TU_options.h"
 #include "src/display.h"
-#include "src/ADC/OC_util_ADC.h"
+#if defined(__MK20DX256__)
+#include "src/ADC/OC_util_ADC.h"  // vendored K20 ADC fork — #errors on non-K20
+#endif
 #include "util/util_debugpins.h"
 #include "TU_BPM.h"
 
@@ -70,9 +72,17 @@ void FASTRUN CORE_timer_ISR() {
   // a DMA transfer to the display things are fairly nicely interleaved. In the
   // next ISR, the display transfer is finalized (CS update).
 
+#if defined(__IMXRT1062__)
+  // T4.0: the panel is bit-banged synchronously and flushed from the main loop
+  // (GRAPHICS_END_FRAME -> display::Render). Clocking it from this 60us ISR would
+  // block ~150us per page, overrun the ISR and hang the system. Outputs must
+  // still update here for clock-edge timing.
+  TU::OUTPUTS::Update();
+#else
   display::Flush();
   TU::OUTPUTS::Update();
   display::Update();
+#endif
 
   // The ADC scan uses async startSingleRead/readSingle and single channel each
   // loop, so should be fast enough even at 60us (check ADC::busy_waits() == 0)
@@ -100,9 +110,19 @@ void FASTRUN CORE_timer_ISR() {
 /*       ---------------------------------------------------------         */
 
 void setup() {
- 
+
   delay(50);
-  NVIC_SET_PRIORITY(IRQ_PORTB, 0); // TR1 = 0 = PTB16
+#if defined(__MK20DX256__)
+  NVIC_SET_PRIORITY(IRQ_PORTB, 0); // TR1 = 0 = PTB16 (K20 PORT IRQ)
+#elif defined(__IMXRT1062__)
+  // T4: trigger inputs (TR1=pin 0, TR2=pin 1) route through the combined
+  // IRQ_GPIO6789 vector. The core's attachInterrupt() enables that IRQ but
+  // leaves it at the startup default priority (128), which is *below* the 60us
+  // CORE timer ISR (TU_CORE_TIMER_PRIO = 80) — so clock edges would be serviced
+  // only after the CORE ISR returns, adding capture jitter. Raise it to 0 so
+  // the pin-change ISR preempts everything, mirroring IRQ_PORTB=0 on the K20.
+  NVIC_SET_PRIORITY(IRQ_GPIO6789, 0);
+#endif
   TU::OUTPUTS::SPI_Init();
 #ifdef MODEL_2TT
   SERIAL_PRINTLN("* 2TT BOOTING...");
@@ -115,7 +135,7 @@ void setup() {
   TU::DigitalInputs::Init();
   TU::ADC::Init(&TU::calibration_data.adc); // Yes, it's using the calibration_data before it's loaded...
   TU::ADC::Init_DMA();
-  TU::OUTPUTS::Init(&TU::calibration_data.dac);
+  TU::OUTPUTS::Init();
    
   display::Init();
 
@@ -147,8 +167,6 @@ void setup() {
     TU::ui.Calibrate();
     ui_mode = TU::UI_MODE_MENU;
   }
-  // set approx. v/oct value (from calibration data)
-  TU::OUTPUTS::set_v_oct();
   // initialize apps
   TU::app_switcher.Init(reset_settings);
   TU::DigitalInputs::Clear();

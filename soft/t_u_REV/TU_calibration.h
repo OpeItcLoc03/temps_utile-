@@ -31,7 +31,10 @@ enum CalibrationFlags {
 };
 
 struct CalibrationData {
-  static constexpr uint32_t FOURCC = FOURCC<'C', 'A', 'L', 1>::value;
+  // FOURCC bumped to CAL,2 for the T4.0 port: the DAC calibration LUT was
+  // dropped from OUTPUTS::CalibrationData, shrinking this struct. PageStorage
+  // rejects the old CAL,1 layout (size/FOURCC mismatch) and loads defaults.
+  static constexpr uint32_t FOURCC = FOURCC<'C', 'A', 'L', 2>::value;
 
   OUTPUTS::CalibrationData dac;
   ADC::CalibrationData adc;

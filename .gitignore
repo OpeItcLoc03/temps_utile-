@@ -3,3 +3,8 @@
 .DS_Store
 *~
 .pio*
+
+# never publish dev meta
+.wiki/
+.tasks/
+CLAUDE.md

@@ -25,9 +25,8 @@ class DebugPins {
 public:
   static void Init() {
     pinMode(TU_GPIO_DEBUG_PIN1, OUTPUT);
-    pinMode(TU_GPIO_DEBUG_PIN2, OUTPUT);
     digitalWriteFast(TU_GPIO_DEBUG_PIN1, LOW);
-    digitalWriteFast(TU_GPIO_DEBUG_PIN2, LOW);
+    // DEBUG_PIN2 (pin 29) repurposed as CLK4_GATE — see TU_gpio.h.
   }
 };
 
